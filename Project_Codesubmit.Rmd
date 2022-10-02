@@ -1,0 +1,371 @@
+---
+title: 'STAC32 Final Project: Racial Disparity in Wealth Distribution in the USA'
+author: Agam Chavan (1004636879), Akaash Palaparthy, Felix Cheung (1005822825), Kritika
+  Pandey (1003897580), Stephanie Wong (1005587054)
+output:
+  html_document:
+    df_print: paged
+---
+<br>
+<br>
+<font size = "5">**Abstract**</font><br>
+<br>
+This project aims to throw light on the disparity experienced by racial and 
+minority groups in the USA with respect to wealth distribution and student 
+loans. While everyone is aware of the racial inequalities present in the USA, 
+this project quantifies the same with data sourced from 
+[Urban Institute](https://apps.urban.org/features/wealth-inequality-charts) 
+and the [US Census](https://www.census.gov/data/tables/time-series/demo/income-poverty/historical-income-households.html), via [tidytuesday](https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-02-09/readme.md).
+The datasets used in our analysis include information on race, income level and 
+student debt. Through statistical analysis, we realised that the average family
+wealth (normalised to 2016) for White families is significantly higher than that
+for Black or Hispanic families in the US. This disparity has existed since 
+several years. There is a high correlation between
+race and average income (P < 0.05) and the largest wealth disparity exists
+between White and Black races in the US. To provide historical context, we also
+consider the Civil Rights Movement and any impact it might have had on social
+indicators. Disproportionate wealth distribution aslo influences one's need for
+student loans. Students from the Black commmunity had a higher percentage of
+debt, compared to their White and Hispanic colleagues.
+<br>
+<br>
+<font size = "5">**Introduction**</font><br>
+<br>
+This project focuses on the wealth gap created as a result of systemic/institutional racism. We look at historical data and the impact of the Civil Rights Movement on curbing the gap.
+
+Racial inequality is defined as "imbalances in the distribution of power,
+economic resources and opportunities" ([Shapiro, 2004](https://archive.org/details/hiddencostofbein00shap_0)). Such social injustices have
+been present in American society since several years, with several monumental 
+efforts taken to right this wrong, most notably the Civil Rights Movement (1954-1968).
+This ended legalised racial discrimination, disenfranchisement and racial segregation
+in the US. Unfortunately, these reforms have not been able to completely curb
+institutional racism in the US. It is a form of racism "that is embedded in the 
+laws and regulations of a society", and "manifests as discrimination in areas
+such as criminal justice, employment, housing, healthcare, education and political
+representation" ([Shapiro, 2004](https://archive.org/details/hiddencostofbein00shap_0)). This project focuses on the disproportionate 
+disadvantages faced by minority communities in the US, especially in income levels,
+family wealth and the burden of student loans. We have decided to focus on income, 
+wealth and student debt since access to money and education largely determine 
+an individual's quality of life and standing in society. 
+Most of our findings are in line
+with what one might expect, given the social atmosphere in the US. However, being
+able to support known facts with quantified evidence and data is always a benefit
+and provides new perspectives.<br>
+<br>
+<br>
+<font size = "5">**Methodology**</font><br>
+<br>
+Our project focuses on three issues in relation with race and inequality: income, wealth, and student debt. As a result, we use the following datasets from tidytuesday: Income Distribution, Race Wealth, and Student Debt. These datasets were already tidied by their author. We conducted graphical and statistical techniques on these datasets to convey our results in an empirical manner. Particularly, our graphical methodologies used various plots under the ggplot function to display the trends for widening disparity between races for student loan debt and family wealth over time. Consequently, we strengthened our visual inferences using statistical testing methods such as Analysis of Variance and Games-Howell test for normally distributed data. Additionally, we utilized the median test and pairwise median test in cases where our data was not normally distributed. 
+<br>
+<br>
+<font size = "5">**Analysis**</font><br>
+<br>
+
+
+
+
+
+This section explains the reasoning behind our methods in the context of our topic. Firstly, the plots allow us to make visual inferences about our data. Indeed, they explicate our hypothesis and introduce our statistical testing in an appealing manner. Furthermore, our primary focus is on a categorical variable—Race. As a result, our plots allow us to visualize numerical statistics as they refer to each racial group separately. Once we draw inferences such as spread, distribution, and trends from our plots, we can use statistical testing methods to reiterate our observations with a higher certainty.  Hence, we rely on techniques such as Analysis of Variance and Games Howell test to compare the differences among the mean incomes and wealth distribution. These tests are useful as they allow us to study the differences between each racial group at once. Additionally, in cases such as the race and incomes, where there is significant skew and the presence of outliers, we resort to testing using medians. In each of these cases, we only conclude that a result is significant if the p-value is less than 0.05. 
+
+
+```{r}
+library(tidytuesdayR)
+library(tidyverse)
+library(smmr)
+library(PMCMRplus)
+```
+
+```{r}
+A1 <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/income_distribution.csv')
+A1
+```
+There are 8 races being analysed:
+```{r}
+A1 %>% count(race)
+```
+<font size = "2">**Step by Step demonstration**</font><br>
+1. Use the data to find income disparity throughout years (impact of civil rights movement) and then do racial ambiguity comparisons. 
+
+
+a. Specific race-only income levels- using mean/median.
+
+
+b. Racially mixed income separately evaluated.
+
+c. Average income shows the income, the races would have earned if the total income was equally distributed among all races.
+
+d. Median is the income that people earn in the household more or less, it's the middle-class income for a particular race. Mean income shows the average income, it doesnot imply that the households make more or less of this amount but simply edges of high income earners and low income earners to show the average income everyone may earn. 
+
+
+<font size = "4">**Impact of Civil rights movement**</font><br>
+
+Since we are trying to capture the impact of the civil rights movement, we will be first considering data after the civil rights movement '1980' to measure the impact on income disparity. We are just comparing the 4 major races without accounting for racial ambiguity(this will be further analysed in later half of the report). Following is the new data set 'households' with the required data for our analysis:
+
+```{r}
+A1 %>% 
+  select(year:race, income_median:income_mean, income_bracket:income_distribution) %>% 
+  slice( 955:1386, 1549:2025, 2188:2916) %>% filter(year >= 1980) -> households
+households
+```
+
+
+#### Checking with normality and equal spread:
+
+
+
+We would be using boxplots and normal quantile plots to determine which test we would do.  
+
+
+
+```{r}
+ggplot(households, aes(x = race, y = income_mean)) + geom_boxplot()
+```
+```{r}
+ggplot(households, aes(sample = income_mean)) + stat_qq() + 
+  stat_qq_line() + facet_wrap( ~ race)
+```
+
+
+
+Observation 1: For the four major groups of race, they seem to skewed to the left in the boxplots. In the normal quantile plot, most of the points appear to be close to the line. There are also a few outliers on the top right of the plot of Asians group. But keep in mind that for the Asians group, their observations are limited as well, they are the smallest group of people being analysed. Based on the above table, the number of observations being high (above 100 each) gives us the benefit of the doubt, so we would be assuming normality from now by applying the central limit theorem. 
+
+Observation 2: The Asians generally make the most money because their progression is much steeper than any other race. White has the second best progression (we will prove it next, these are just hypothesis based on the graph). Hispanics have a better income curve than black people. Overall, the Asian and White group appears to have more spread than others. 
+
+Based on the boxplots and normal quantile plots, we observed normal distribution and unequal spreads. Therefore, we would be doing the Welch ANOVA test in the next part.
+
+#### The relationship between race and income_mean:
+We would be running an analysis of variance (Welch ANOVA) below. 
+$Ho$: All race groups have same income mean.
+$Ha$: Not all income means the same, at least one race group is different from others.
+
+```{r}
+oneway.test(income_mean ~ race, data = households)
+```
+
+Observation 1: There is a high correlation between income mean and the races, p-value is very small. As the p-value < 0.05, there is signifance difference within the race groups. Therefore, we can reject the null that income means are equal. 
+As there is more than 3 groups, we would do a Games-Howell test to see where these differences lie.
+
+```{r}
+gamesHowellTest(income_mean ~ factor(race), data = households)
+```
+
+Observation2: Asians have the highest income compared to all race groups: see the differences between income, and the highest parity is between Black and Hispanic groups, this is because the income_mean is lowest for Black group. I want to see the progression among races throughout years, we initially separated the data set to only consider years after 1980 to see the impact of the civil rights movement. 
+
+
+<font size = "3">**Before civil rights movement:**</font><br>
+Following dataset onyl takes into account data after 1980:
+```{r}
+A1 %>% 
+  select(year:race, income_median:income_mean, income_bracket:income_distribution) %>%
+  slice(955:1385, 1549:2025, 2188:2916) %>% filter(year <= 1980) -> household1
+household1
+```
+
+#### Checking with normality and equal spread:
+
+
+We would be focusing on the income median this time and we would use boxplots and normal quantile plots to determine which test we would do. 
+
+```{r}
+ggplot(household1, aes(x = race, y = income_mean)) + geom_boxplot()
+```
+
+```{r}
+ggplot(household1, aes(y = income_median, x = year)) +
+  geom_point() + geom_smooth(se = F) + facet_wrap(~race)
+```
+
+
+
+Observation 1: No Asian data collected before 1980.
+Observation 2: There are outliers for the Black and Hispanic group. We observed there is right-skewed distribution in Hispanic group and left-skewed distribution in Black group. As there is no normality so we would use median test from this point forward.
+
+#### The relationship between race and income_median:
+$Ho$: Medians for all race groups are equal
+$Ha$: Not all income medians the same, at least one race group is different from others.
+
+```{r}
+median_test(household1,income_median,race)
+```
+
+Observation 1: We can clearly see the income disparity through the above table. Only the White group's income median are all above the overall median; oppositely, there is not a single data point of the Black group making above the median of all income_median level. Only a handful Hispanics' income_median were above the overall median (keep in mind Hispanics were also slave traded in history but racial discrimination was less serious than Black people).
+
+Observation 2: The p-value is very small so there is a correlation between race and income. As p-value < 0.05, which means that at least one group has a different median than other race groups. If we go back to the boxplots, we can see the Black group has the lowest median. If you remember, the middle line in each of the boxplots represent the median. But the point is to verify this using a statistical test. In order to do this, we are going to do the pairwise_median_test.
+
+```{r}
+pairwise_median_test(household1,income_median,race)
+```
+
+We see that the difference exist between races with the largest differences between black people and white people, because the p-value is smaller the differences between their income_mean is more aparent. 
+
+<font size = "3">**Analysis of income disparity:**</font><br>
+
+This time we would also include the group of Asians in the data. 
+
+```{r}
+household1 %>% summarize(med = median(income_median)) %>% pull(med) -> m1
+m1
+households %>% summarize(med = median(income_median)) %>% pull(med) -> m
+m
+```
+
+Observation: After the civil rights movement, the overall median of income median has increased. The factor of change may be mainly caused by adding the Asian group and inflation through the years. The increased median income could be a result of a larger workforce from each race, because of increased population.
+
+##### Comparison through median test: 
+$Ho$: Medians for all race groups are equal
+$Ha$: Not all income medians the same, at least one race group is different from others.
+
+```{r}
+median_test(household1,income_median,race)
+```
+Observation 1: Once again, we can clearly see the income disparity through the above table. But this time, not only the White group's income median are all above the overall median, there is also the Asian group; oppositely, there is still not a single data point of the Black group making above the median of all income_median level. The income disparity has worsened for Hispanics, compared to our data before civil rights movement. 
+
+Observation 2: The p-value is even smaller than before so there is still a correlation between race and income. As p-value < 0.05, which means that at least one group has a different median than other race groups. Mood’s median test is really similar to the F-test in ANOVA: it’s testing the null hypothesis that the race groups all have the same median (of income_median), against the alternative that the null is not true. We rejected this null, but we don’t know which race group differ significantly from which. To resolve this, we do all the pairwise Mood’s median tests on all pairs of groups, and we would look at the adjusted P-values to see how the race group differ in terms of income median.
+
+```{r}
+pairwise_median_test(households,income_median,race)
+```
+Observation: By comparing income_median of each race group to another, they all have significant differences because their adjusted P-value < 0.05
+
+<font size = "5">**Racial Ambiguity:**</font><br>
+
+We are only considering mixed races in the next part of the report:
+Note: White only category has Hispanics mixed**
+```{r}
+A1 %>% 
+  select(year:race, income_median:income_mean, income_bracket:income_distribution) %>% 
+  slice(-1:-477,-955:-1386,-1549:-2025, -2188:-2916) -> Racial_a
+Racial_a
+```
+
+#### Checking with normality and equal spread:
+We would be using normal quantile plots to determine which test we would do.  
+```{r}
+ggplot(Racial_a, aes(y = income_median, x = year)) +
+  geom_point() + geom_smooth(se = F) + facet_wrap(~race)
+```
+
+Observation: We can observe the distribution is not normal and it does not have equal SDs. Therefore, we would use Mood’s Median Test in the following part. 
+
+### Relationship between three major races and income_median:
+
+```{r}
+median_test(Racial_a,income_median,race)
+```
+
+Observation 1: Clear disparity even among mixed races, the biggest racial difference is among people from black-African origin. It is interesting to see that racially ambiguous white people make less money compared to visible white. This hints to the existence of institutionalized racism. White ambiguous people make equally less and more than the median compared to mixed Asians who generally make more than the median amount. And black racially ambiguous make less than the average, this result is similar to our results on non-ambiguous races, where people of black descent made less than the median income. From our analysis, we conclude that racial ambiguity doesn't have an impact on income disparity among black and Asian households but it creates a difference in the income among white households. 
+
+Observation 2: P < 0.05, which indicates that at least one race group has a different median than other groups. 
+
+<font size = "4">**Income distribution concluding remarks and observations:**</font><br>
+
+```{r}
+A1 %>% 
+  select(year:race, income_bracket:income_distribution) %>% 
+  slice(-1:-477) -> income_disparity
+income_disparity
+```
+
+This is from the github website: they already summarize for us. We can use this data to strengthen our point on income disparity, we just focused to compare the 3 biggest players of races in following analysis: Asian, White and Black.
+
+```{r}
+income_levels <- c(
+  "Under $15,000",
+  "$15,000 to $24,999",
+  "$25,000 to $34,999",
+  "$35,000 to $49,999",
+  "$50,000 to $74,999",
+  "$75,000 to $99,999",
+  "$100,000 to $149,999",
+  "$150,000 to $199,999",
+  "$200,000 and over")
+
+income_disparity %>%
+  filter(race %in% c("Black Alone", "White Alone", "Asian Alone")) %>%
+  mutate(income_bracket = factor(income_bracket, levels = income_levels)) %>%
+  ggplot(aes(x = year, y = income_distribution, color = race, fill = race)) +
+  geom_col(position = "fill") +
+  facet_wrap(~income_bracket)
+```
+
+Observation 1: The Asian group generally makes the most money in the recent years, while majority of Black people make less than 75000 a year, white people are mostly equally distributed in all income ranges.  
+
+<br>
+## In the next section of our analysis, we will be looking at how different races in the US are exposed differently to student loans. 
+<br>
+
+# Student Debt: 
+
+```{r}
+student_debt <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/student_debt.csv')
+student_debt %>% arrange(year) %>% arrange(race)
+```
+#Student Debt in different racial groups, from 1989 ~ 2016
+
+Observation: The graph clearly shows that the percentage of families with a student loan, across races, has increased over time. The trends for Hispanic and White student debt demonstrate multicollinearity and overall, the lack of sufficient data points means that these results may not be 100% accurate. There is a higher percentage of Black families with a student loan, perhaps since average family wealth levels for Black families is considerably lower than White families, hence increasing their dependence on loans to pursue post-secondary education.
+
+
+
+# Race Wealth:
+In this section, we will take data from wealth among different racial groups and analyze about the average family wealth, where data will be capped and normalized at the year of 2016. 
+In this section, we analyse median family wealth data from different years and from different racial groups
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ggplot(student_debt, aes(x = year, y = loan_debt_pct, colour = race)) +
+  geom_point(size = 1.5, alpha = 0.9) + 
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "Year", y = "Families that own a student debt in %") + 
+  ggtitle("Student Debt in different racial group, 1989 to 2016") +
+  theme_bw(base_size = 10)
+  
+```
+
+Note: Some data points were not included properly and hence filled with 'NA'. For the purpose of this analysis, we will ignore such data points.
+
+This part analyses wealth disparity over the years
+
+## Student Debt in different racial groups, from 1989 ~ 2016
+
+Observation: The graph clearly shows that the percentage of families with a student loan, across races, has increased over time. The trends for Hispanic and White student debt demonstrate multicollinearity and overall, the lack of sufficient data points means that these results may not be 100% accurate and results in heteroskedasticity. There is a higher percentage of Black families with a student loan, perhaps since average family wealth levels for Black families is considerably lower than White families, hence increasing their dependence on loans to pursue post-secondary education.
+
+
+Result 1: Hispanic tends to manage their student debt in a more efficient way than most of the Whites and Blacks. This is more likely to explain with the education level in each group, however education level are not included in this data set, so this might be concluded as an omitted variable. 
+
+
+# Race Wealth:
+
+### In this section, we will take data from wealth among different racial groups and analyze about the average family wealth, where data will be capped and normalized at the year of 2016. 
+
+```{r}
+race_wealth <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/race_wealth.csv')
+race_wealth %>% 
+  arrange(type) %>% 
+  arrange(year) %>% 
+  arrange(wealth_family)
+```
+Note: Some of the data are not included properly and are filled with "NA". We will ignore the NA values for this section.
+- racial group "Non-White" will not be included in this section since non-white can mean any racial group other than white.
+We do not have any data from Hispanic and Black since Black/Hispanic distinction within non-white population after 1983.
+
+## Different racial group persist income disparities from different years
+
+```{r}
+race_wealth %>% 
+  filter(!is.na(wealth_family), race != "Non-White", type == "Average") %>% 
+  ggplot(aes( x = year, y = wealth_family)) + 
+  geom_line(aes(colour = race)) +
+  geom_point(aes(colour = race)) + 
+  ggtitle("Average family wealth by different race, normalized in 2016")
+```
+
+Observation: From this graph, we can see that the average family wealth for White families is significantly higher in comparison to Black and Hispanic families. In 2016, the average family wealth for Black and Hispanic families under USD 25,000. In comparison, average family wealth for White families was just under USD 90,000, more than 3 times higher. This graph also highlights that the wealth disparity between different races has always existed, and unfortunately the gap has widened over the years.
+<br>
+<br>
+<font size = "5">**Conclusion**</font><br>
+<br>
+
+Our report demonstrates that within the racial landscape, not much has changed. Income disparity is the greatest among black and white descendants even after 50 years of the civil rights movement. Furthermore, the report shows that white racially ambiguous people earn significantly lower than their visibly white counterpart. This not only proves the existence of systematic racism but also throws light on the significance of the Black Lives Matter movement. Additionally, it could be used to further compare the impact of Black Lives Matter to the civil rights movement.  Although our reports only examines income disparity and undermines the impact of civil rights movement in other areas, it could also be used as a stepping stone to perform research on employment opportunities, health and life expectancies for low income earners among different races. Moreover, it can act as a wake-up call for researchers and activists in the field to racial injustices to research on the impact of the eradication factors of income disparity and life style differences.
+
+
+
+
